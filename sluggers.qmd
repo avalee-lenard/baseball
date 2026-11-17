@@ -1,0 +1,64 @@
+---
+title: "Sluggers"
+---
+
+```{r}
+#| message: false
+library(tidyverse)
+library(Lahman)
+```
+
+```{r}
+Batting |>
+  group_by(playerID) |>
+  summarize(
+    career_home_runs = sum(HR, na.rm = TRUE),
+    first_year = min(yearID),
+    last_year = max(yearID),
+    .groups = "drop"
+  ) |>
+  inner_join(
+    People |> select(playerID, nameFirst, nameLast),
+    by = "playerID"
+  ) |>
+  arrange(desc(career_home_runs)) |>
+  slice_head(n = 15) |>
+  mutate(
+    player = str_c(nameFirst, nameLast, sep = " "),
+    steroid_era = if_else(
+      first_year <= 2009 & last_year >= 1994,
+      "Overlapped 1994-2009",
+      "No overlap"
+    )
+  ) |>
+  ggplot(aes(
+    x = career_home_runs,
+    y = fct_reorder(player, career_home_runs),
+    fill = steroid_era
+  )) +
+  geom_col() +
+  scale_fill_manual(
+    name = "Steroid-era overlap",
+    values = c("No overlap" = "gray65", "Overlapped 1994-2009" = "#D55E00")
+  ) +
+  labs(
+    title = "Career Home Runs: The All-Time Leaders",
+    x = "Career home runs",
+    y = "Player",
+    caption = "Source: Lahman database. Overlap means a career intersected 1994-2009."
+  )
+```
+
+```{r}
+Batting |>
+  filter(playerID == "bondsba01") |>
+  group_by(yearID) |>
+  summarize(home_runs = sum(HR, na.rm = TRUE), .groups = "drop") |>
+  ggplot(aes(x = yearID, y = home_runs)) +
+  geom_col() +
+  labs(
+    title = "Barry Bonds's Home Runs by Season",
+    x = "Season",
+    y = "Home runs"
+  )
+```
